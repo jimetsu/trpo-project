@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Паттерны проектирования JavaScript</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px;
+            font-family: Arial, sans-serif;
+            background: #f1f2f6;
+            color: #25283a;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+            color: #303653;
+        }
+
+        .subtitle {
+            color: #777;
+            margin-bottom: 25px;
+        }
+
+        .section {
+            background: white;
+            padding: 22px;
+            margin-bottom: 22px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #34436b;
+        }
+
+        .description {
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 18px;
+        }
+
+        .observer-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .panel {
+            padding: 15px;
+            background: #f6f7fa;
+            border-radius: 8px;
+            min-width: 0;
+        }
+
+        .panel h3 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+
+        .book-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        button {
+            padding: 9px 14px;
+            border: none;
+            border-radius: 6px;
+            background: #5369a6;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #394e87;
+        }
+
+        button:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        .book-button {
+            width: 100%;
+            text-align: left;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .book-button:hover {
+            background: #e9edfa;
+            color: #333;
+        }
+
+        .book-button.active {
+            background: #dce4fa;
+            border-color: #5369a6;
+        }
+
+        .log {
+            height: 220px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #25283a;
+            color: #b8e6c1;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .counter {
+            margin-top: 12px;
+            color: #5369a6;
+            font-weight: bold;
+        }
+
+        select, input {
+            padding: 9px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin: 4px;
+        }
+
+        .strategy-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .book-card {
+            background: #f6f7fa;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #5369a6;
+        }
+
+        .book-card strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .command-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .command-controls input {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .command-log {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f6f7fa;
+            border-radius: 8px;
+            min-height: 65px;
+            font-size: 14px;
+        }
+
+        .singleton-result {
+            margin-top: 12px;
+            padding: 12px;
+            background: #f6f7fa;
+            border-radius: 8px;
+        }
+
+        .status {
+            color: #5369a6;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 750px) {
+            body {
+                padding: 12px;
+            }
+
+            .observer-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <h1>Паттерны проектирования JavaScript</h1>
+
+        <p class="subtitle">
+            Демонстрация четырёх паттернов проектирования
+            на примере библиотеки книг.
+        </p>
+
+        <p id="load-status" class="status">
+            Загрузка данных...
+        </p>
+
+        <!-- OBSERVER -->
+        <section class="section">
+            <h2>1. Observer — наблюдатель</h2>
+
+            <p class="description">
+                Позволяет нескольким элементам страницы автоматически
+                обновляться при изменении общего состояния.
+                При выборе книги обновляются карточка, счётчик
+                просмотров и журнал событий.
+            </p>
+
+            <div class="observer-layout">
+
+                <div class="panel">
+                    <h3>Список книг</h3>
+                    <div id="book-list" class="book-list">
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Информация о книге</h3>
+                    <div id="selected-book">
+                        Выберите книгу из списка.
+                    </div>
+
+                    <div id="view-count" class="counter">
+                        Просмотров: 0
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Журнал событий</h3>
+                    <div id="observer-log" class="log">
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- STRATEGY -->
+        <section class="section">
+            <h2>2. Strategy — стратегия</h2>
+
+            <p class="description">
+                Позволяет менять алгоритм сортировки списка книг
+                во время работы программы без изменения основного кода.
+            </p>
+
+            <label for="sort-strategy">
+                Способ сортировки:
+            </label>
+
+            <select id="sort-strategy">
+                <option value="title">По названию (А–Я)</option>
+                <option value="year">По году (сначала новые)</option>
+                <option value="rating">По рейтингу (убывание)</option>
+            </select>
+
+            <div id="strategy-list" class="strategy-list">
+            </div>
+        </section>
+
+        <!-- COMMAND -->
+        <section class="section">
+            <h2>3. Command — команда</h2>
+
+            <p class="description">
+                Каждое действие над библиотекой оформляется
+                отдельной командой. Команды можно выполнять
+                и отменять.
+            </p>
+
+            <div class="command-controls">
+
+                <input
+                    type="text"
+                    id="new-title"
+                    placeholder="Название книги"
+                >
+
+                <input
+                    type="text"
+                    id="new-author"
+                    placeholder="Автор"
+                >
+
+                <button id="add-book">
+                    Добавить книгу
+                </button>
+
+                <button id="delete-book">
+                    Удалить выбранную
+                </button>
+
+                <button id="undo-command">
+                    Отменить
+                </button>
+
+            </div>
+
+            <div id="command-log" class="command-log">
+                Выполненные действия появятся здесь.
+            </div>
+        </section>
+
+        <!-- SINGLETON -->
+        <section class="section">
+            <h2>4. Singleton — одиночка</h2>
+
+            <p class="description">
+                Гарантирует существование единственного экземпляра
+                общего объекта журнала действий. Разные части
+                программы обращаются к одному и тому же объекту.
+            </p>
+
+            <button id="singleton-check">
+                Проверить Singleton
+            </button>
+
+            <div id="singleton-result" class="singleton-result">
+                Нажмите кнопку для проверки.
+            </div>
+        </section>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
